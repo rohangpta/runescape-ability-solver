@@ -9,7 +9,8 @@ solver.parameters.max_time_in_seconds = 20
 df = pd.read_csv("melee_data.csv")
 
 
-class AbilitySolver:
+class AbilitySolver:   
+
     START_ADREN = 100
     NUM_ABILITIES = df.shape[0]
     TIME = 10
@@ -33,6 +34,8 @@ class AbilitySolver:
         for i in range(self.TIME):
             for j, row in df.iterrows():
                 self.x[i, j] = model.NewBoolVar(row["Ability Name"])
+                if row["Ability Name"] == "Berserk":
+                    self.BERSERK_DAMAGE = row["Damage"]
                 self.damages[j] = row["Damage"]
                 self.names[j] = row["Ability Name"]
         for i in range(self.TIME):
@@ -101,13 +104,13 @@ class AbilitySolver:
             model.Add(self.abils_used[i] == 1).OnlyEnforceIf(b.Not())
             model.Add(self.adren[i] == self.adren[i - 1]).OnlyEnforceIf(b)
 
-        model.Maximize(
-            sum(
-                self.x[i, j] * self.damages[j]
-                for i in range(self.TIME)
-                for j in range(self.NUM_ABILITIES)
-            )
-        )
+        damage_sum = model.NewIntVar(0, self.TIME * self.BERSERK_DAMAGE, "sum of damage")
+        model.Add(damage_sum == sum(
+            self.x[i, j] * self.damages[j]
+            for i in range(self.TIME)
+            for j in range(self.NUM_ABILITIES)
+        ))
+        model.Maximize(damage_sum)
 
     def solve(self):
         output = []
