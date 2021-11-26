@@ -1,0 +1,27 @@
+Ability Name,Damage,Duration,Type,Cooldown
+Sacrifice,2704,3,Basic,50
+Tuska's Wrath,3044,3,Basic,25
+Bash,3787,3,Basic,25
+Punish,2558,3,Basic,5
+Kick,2704,3,Basic,25
+Slice,3264,3,Basic,5
+Bladed Dive,3312,3,Basic,17
+Havoc,4094,3,Basic,17
+Smash,4094,3,Basic,17
+Greater Fury,4094,3,Basic,9
+Decimate,4846,3,Basic,12
+Cleave,4846,3,Basic,12
+Sever,4846,3,Basic,25
+Dismember,6577,3,Basic,25
+Backhand,2704,3,Basic,25
+Barge,3312,3,Basic,34
+Greater Flurry,16376,7,Threshold,34
+Stomp,5139,3,Threshold,25
+Quake,5602,3,Threshold,34
+Forceful Backhand Flank,8060,3,Threshold,25
+Destroy,19386,7,Threshold,34
+Assault,22409,9,Threshold,50
+Hurricane,11131,3,Threshold,34
+Blood Tendrils,11793,3,Threshold,75
+Slaughter-Walk,16608,3,Threshold,50
+Berzerk,1000000,3,Ultimate,100
