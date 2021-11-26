@@ -1,10 +1,10 @@
 import pandas as pd
-import ortools
 from ortools.sat.python import cp_model
 
 
 model = cp_model.CpModel()
 solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 20
 
 df = pd.read_csv("melee_data.csv")
 
@@ -20,6 +20,7 @@ class AbilitySolver:
         self.x, self.damages, self.names = {}, {}, {}
         self.abils_used = [None for _ in range(self.TIME)]
         self.adren = []
+        self.adren_cap = [None for _ in range(self.TIME)]
 
     def init_variables(self):
         """
@@ -28,6 +29,7 @@ class AbilitySolver:
         self.adren = [
             model.NewIntVar(0, 100, f"Adren at time {t}") for t in range(self.TIME)
         ] + [model.NewConstant(self.START_ADREN)]
+
         for i in range(self.TIME):
             for j, row in df.iterrows():
                 self.x[i, j] = model.NewBoolVar(row["Ability Name"])
@@ -39,6 +41,9 @@ class AbilitySolver:
                 self.abils_used[i]
                 == sum(self.x[i, j] for j in range(self.NUM_ABILITIES))
             )
+            self.adren_cap[i] = model.NewBoolVar("")
+            model.Add(self.adren[i - 1] >= 91).OnlyEnforceIf(self.adren_cap[i])
+            model.Add(self.adren[i - 1] < 91).OnlyEnforceIf(self.adren_cap[i].Not())
 
     def add_constraints(self):
         """
@@ -57,16 +62,19 @@ class AbilitySolver:
                 c = row["Cooldown"]
 
                 # Ability used only as often as cooldown
-                model.Add(
-                    sum(self.x[c, j] for c in range(max(i - c + 1, 0), i)) == 0
-                ).OnlyEnforceIf(self.x[i, j])
+                cd = model.NewIntVar(0, self.NUM_ABILITIES, "cd")
+                model.Add(cd == sum(self.x[c, j] for c in range(max(i - c + 1, 0), i)))
+                model.Add(cd == 0).OnlyEnforceIf(self.x[i, j])
 
                 # Define adren variation depending on the type of ability
                 type = row["Type"]
 
                 if type == "Basic":
+                    model.Add(self.adren[i] == 100).OnlyEnforceIf(
+                        [self.x[i, j], self.adren_cap[i]]
+                    )
                     model.Add(self.adren[i] == self.adren[i - 1] + 9).OnlyEnforceIf(
-                        self.x[i, j]
+                        [self.x[i, j], self.adren_cap[i].Not()]
                     )
 
                 elif type == "Threshold":
@@ -77,6 +85,9 @@ class AbilitySolver:
 
                 elif type == "Ultimate":
                     model.Add(self.adren[i - 1] == 100).OnlyEnforceIf(self.x[i, j])
+                    model.Add(self.adren[i - 1] != 100).OnlyEnforceIf(
+                        self.x[i, j].Not()
+                    )
                     model.Add(self.adren[i] == 0).OnlyEnforceIf(self.x[i, j])
 
         for i in range(self.TIME):
@@ -104,13 +115,14 @@ class AbilitySolver:
         for i in range(self.TIME):
             for j in range(self.NUM_ABILITIES):
                 if solver.Value(self.x[i, j]) == 1:
-                    output.append((i, self.names[j]))
+                    output.append([i, solver.Value(self.adren[i]), self.names[j]])
 
-        print(solver.ResponseStats)
-        print(output)
+        df = pd.DataFrame(output, columns=["Tick", "Adrenaline", "Ability Name"])
+        print(df)
+        print(solver.ResponseStats())
 
 
-s = AbilitySolver(10.8, 100)
+s = AbilitySolver(25, 100)
 
 s.init_variables()
 s.add_constraints()
