@@ -1,0 +1,19 @@
+Ability Name,Damage,Duration,Type,Cooldown
+Sacrifice,3133,3,Basic,50
+Tuska's Wrath,3492,3,Basic,25
+Bash,4341,3,Basic,25
+Wrack,2962,3,Basic,5
+Chain,3133,3,Basic,17
+Sonic Wave,4740,3,Basic,9
+Greater Conc Blast,8560,3,Basic,9
+Dragon Breath,5613,3,Basic,17
+Magma Tempest,9786,3,Basic,25
+Corruption Blast,5452,3,Basic,25
+Combust-Walk,7564,3,Basic,25
+Impact-Flank,7501,3,Basic,25
+Detonate-4t,9417,4,Threshold,50
+Smoke Tendrils,14083,10,Threshold,75
+Deep Impact-Flank,8180,3,Threshold,25
+Asphyxiate,20048,7,Threshold,34
+Wild Magic,11555,3,Threshold,34
+Sunshine,100000,3,Ultimate,100

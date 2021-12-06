@@ -4,18 +4,17 @@ from ortools.sat.python import cp_model
 
 model = cp_model.CpModel()
 solver = cp_model.CpSolver()
-solver.parameters.max_time_in_seconds = 20
+solver.parameters.max_time_in_seconds = 60
+solver.parameters.num_search_workers = 8
 
-df = pd.read_csv("melee_data.csv")
 
-
-class AbilitySolver:   
-
-    START_ADREN = 100
-    NUM_ABILITIES = df.shape[0]
-    TIME = 10
-
-    def __init__(self, seconds, start_adren):
+class AbilitySolver:
+    def __init__(self, seconds=10, start_adren=100, style="melee"):
+        style_ = style.lower()
+        if style_ not in ["magic", "melee", "ranged"]:
+            raise ValueError
+        self.df = pd.read_csv(f"{style_}_data.csv")
+        self.NUM_ABILITIES = self.df.shape[0]
         self.TIME = int(seconds / 0.6) + 1
         self.START_ADREN = start_adren
         self.x, self.damages, self.names = {}, {}, {}
@@ -32,10 +31,10 @@ class AbilitySolver:
         ] + [model.NewConstant(self.START_ADREN)]
 
         for i in range(self.TIME):
-            for j, row in df.iterrows():
+            for j, row in self.df.iterrows():
                 self.x[i, j] = model.NewBoolVar(row["Ability Name"])
-                if row["Ability Name"] == "Berserk":
-                    self.BERSERK_DAMAGE = row["Damage"]
+                if row["Type"] == "Ultimate":
+                    self.ULTIMATE_DAMAGE = row["Damage"]
                 self.damages[j] = row["Damage"]
                 self.names[j] = row["Ability Name"]
         for i in range(self.TIME):
@@ -53,7 +52,7 @@ class AbilitySolver:
         Add constraints to the CP Model
         """
         for i in range(self.TIME):
-            for j, row in df.iterrows():
+            for j, row in self.df.iterrows():
                 dur = row["Duration"]
 
                 # Variables x_ij if ability j was used at timestamp i
@@ -91,7 +90,7 @@ class AbilitySolver:
                     model.Add(self.adren[i - 1] != 100).OnlyEnforceIf(
                         self.x[i, j].Not()
                     )
-                    model.Add(self.adren[i] == 0).OnlyEnforceIf(self.x[i, j])
+                    model.Add(self.adren[i] == 10).OnlyEnforceIf(self.x[i, j])
 
         for i in range(self.TIME):
             # Ensure at most 1 ability used at any time
@@ -104,12 +103,17 @@ class AbilitySolver:
             model.Add(self.abils_used[i] == 1).OnlyEnforceIf(b.Not())
             model.Add(self.adren[i] == self.adren[i - 1]).OnlyEnforceIf(b)
 
-        damage_sum = model.NewIntVar(0, self.TIME * self.BERSERK_DAMAGE, "sum of damage")
-        model.Add(damage_sum == sum(
-            self.x[i, j] * self.damages[j]
-            for i in range(self.TIME)
-            for j in range(self.NUM_ABILITIES)
-        ))
+        damage_sum = model.NewIntVar(
+            0, self.TIME * self.ULTIMATE_DAMAGE, "Sum of Damage"
+        )
+        model.Add(
+            damage_sum
+            == sum(
+                self.x[i, j] * self.damages[j]
+                for i in range(self.TIME)
+                for j in range(self.NUM_ABILITIES)
+            )
+        )
         model.Maximize(damage_sum)
 
     def solve(self):
@@ -125,7 +129,7 @@ class AbilitySolver:
         print(solver.ResponseStats())
 
 
-s = AbilitySolver(25, 100)
+s = AbilitySolver(30, 100, "ranged")
 
 s.init_variables()
 s.add_constraints()
