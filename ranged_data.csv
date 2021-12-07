@@ -1,0 +1,18 @@
+Ability Name,Damage,Duration,Type,Cooldown
+Sacrifice,2657,3,Basic,50
+Tuska's Wrath,2989,3,Basic,25
+Bash,3744,3,Basic,25
+Piercing Shot,2512,3,Basic,5
+Grico-Caroming,7538,3,Basic,17
+Greater Dazing Shot,4179,3,Basic,9
+Needle Strike,4016,3,Basic,9
+Snipe,6463,4,Basic,17
+Corruption Shot,5350,3,Basic,25
+Frag Shot-Walk,6444,3,Basic,25
+Binding Shot-Flank,6477,3,Basic,25
+Bombardment,5497,3,Threshold,50
+Shadow Tendrils,9456,3,Threshold,75
+Rapid Fire,20097,8,Threshold,34
+Snapshot,10470,3,Threshold,34
+Tight Bindings-Flank,7908,3,Threshold,25
+Death's Swiftness,100000,3,Ultimate,100
