@@ -4,16 +4,24 @@ from ortools.sat.python import cp_model
 
 model = cp_model.CpModel()
 solver = cp_model.CpSolver()
-solver.parameters.max_time_in_seconds = 60
+solver.parameters.max_time_in_seconds = 300
 solver.parameters.num_search_workers = 8
 
 
 class AbilitySolver:
     def __init__(self, seconds=10, start_adren=100, style="melee"):
         style_ = style.lower()
+
         if style_ not in ["magic", "melee", "ranged"]:
-            raise ValueError
-        self.df = pd.read_csv(f"{style_}_data.csv")
+            raise ValueError("Style must be one of magic, melee, or ranged")
+
+        if not isinstance(start_adren, int) or start_adren > 100 or start_adren < 0:
+            raise ValueError("Please enter an integer in the range [0, 100]")
+
+        if not isinstance(seconds, int) or seconds <= 0:
+            raise ValueError("Please enter a positive integer")
+
+        self.df = pd.read_csv(f"./data/{style_}_data.csv")
         self.NUM_ABILITIES = self.df.shape[0]
         self.TIME = int(seconds / 0.6) + 1
         self.START_ADREN = start_adren
@@ -129,7 +137,7 @@ class AbilitySolver:
         print(solver.ResponseStats())
 
 
-s = AbilitySolver(30, 100, "ranged")
+s = AbilitySolver(seconds=10, start_adren=100, style="melee")
 
 s.init_variables()
 s.add_constraints()
