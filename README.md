@@ -1,6 +1,6 @@
 # RuneScape Ability Solver
 
-A program to optimize combat damage for a given timeframe on the video game RuneScape 3. Uses constraint programming, Google's ortools/CP SAT and an elementary set of constraints to construct a simplified model of RuneScape's combat
+A program to optimize combat damage for a given timeframe on the videogame RuneScape 3. Uses constraint programming, Google's ortools/CP-SAT and an elementary set of constraints to construct a simplified model of RuneScape's combat.
 
 ## Dependencies
 
@@ -95,3 +95,5 @@ Some constraints that were not immediately captured by the model that were other
 
 
 Authors: Nathaniel Lao and Rohan Gupta
+
+Used as final project for CIS 189 at the University of Pennsylvania
