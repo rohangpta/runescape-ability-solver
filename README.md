@@ -1,6 +1,6 @@
-# CIS 189 Final Project
+# RuneScape Ability Solver
 
-Nathaniel Lao and Rohan Gupta
+A program to optimize combat damage for a given timeframe on the video game RuneScape 3. Uses constraint programming, Google's ortools/CP SAT and an elementary set of constraints to construct a simplified model of RuneScape's combat
 
 ## Dependencies
 
@@ -92,3 +92,6 @@ Some constraints that were not immediately captured by the model that were other
 - Behaviour with ultimate abilities. As discussed in presentation, ultimate abilities are too powerful not to use when available. However, they present 'non-linear' constraints that cannot be easily encoded in CP-model. We attempted to encode the 20-second damage boost in CP model, but turns out it's fundamentally quadratic so CP-model errored out on us. Therefore, we had two solutions to ensure Ultimate abilities get the treatment they deserve. First, we give them an absurdly high damage value. This makes it almost always better to use an Ultimate ability in a rotation -- if you can afford to. In addition, we add a sufficient constraint on 100 adrenaline to use an ultimate ability. Specifically, we say that if `adren[i] == 100` then "Use available ultimate ability". 
 
 > Until now, we have only been using constraints in their most literal form -- as 'necessary' requirements for execution of a model. This is reflected in our single half-reification for most constraints. However, in the case of ultimate abilities, we found that it was better to just fully reify since in this case, the greedy decision to use an ultimate ability when available often turned out to be best.
+
+
+Authors: Nathaniel Lao and Rohan Gupta
