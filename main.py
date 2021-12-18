@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 model = cp_model.CpModel()
 solver = cp_model.CpSolver()
 solver.parameters.max_time_in_seconds = 300
-solver.parameters.num_search_workers = 8
+# solver.parameters.num_search_workers = 1
 
 
 class AbilitySolver:
@@ -55,6 +55,19 @@ class AbilitySolver:
             model.Add(self.adren[i - 1] >= 91).OnlyEnforceIf(self.adren_cap[i])
             model.Add(self.adren[i - 1] < 91).OnlyEnforceIf(self.adren_cap[i].Not())
 
+        self.damage_boost = [model.NewIntVar(1, 3, "") for _ in range(self.TIME)]
+        self.abil_damage = [
+            model.NewIntVar(0, self.ULTIMATE_DAMAGE, "") for _ in range(self.TIME)
+        ]
+
+        self.damage_sum = model.NewIntVar(
+            0, self.TIME * self.ULTIMATE_DAMAGE * 2, "Sum of Damage"
+        )
+
+        self.total_damage = [
+            model.NewIntVar(0, self.ULTIMATE_DAMAGE * 2, "") for _ in range(self.TIME)
+        ]
+
     def add_constraints(self):
         """
         Add constraints to the CP Model
@@ -94,11 +107,21 @@ class AbilitySolver:
                     model.Add(self.adren[i - 1] >= 50).OnlyEnforceIf(self.x[i, j])
 
                 elif type == "Ultimate":
-                    model.Add(self.adren[i - 1] == 100).OnlyEnforceIf(self.x[i, j])
-                    model.Add(self.adren[i - 1] != 100).OnlyEnforceIf(
-                        self.x[i, j].Not()
-                    )
+                    model.Add(self.adren[i - 1] == 90).OnlyEnforceIf(self.x[i, j])
+                    model.Add(self.adren[i - 1] < 100).OnlyEnforceIf(self.x[i, j].Not())
+
+                    for k in range(i, min(i + 20, self.TIME)):
+                        model.Add(self.damage_boost[k] == 2).OnlyEnforceIf(self.x[i, j])
+
                     model.Add(self.adren[i] == 10).OnlyEnforceIf(self.x[i, j])
+
+        for i in range(self.TIME):
+            model.Add(
+                self.abil_damage[i]
+                == sum(
+                    self.x[i, j] * self.damages[j] for j in range(self.NUM_ABILITIES)
+                )
+            )
 
         for i in range(self.TIME):
             # Ensure at most 1 ability used at any time
@@ -111,33 +134,36 @@ class AbilitySolver:
             model.Add(self.abils_used[i] == 1).OnlyEnforceIf(b.Not())
             model.Add(self.adren[i] == self.adren[i - 1]).OnlyEnforceIf(b)
 
-        damage_sum = model.NewIntVar(
-            0, self.TIME * self.ULTIMATE_DAMAGE, "Sum of Damage"
-        )
-        model.Add(
-            damage_sum
-            == sum(
-                self.x[i, j] * self.damages[j]
-                for i in range(self.TIME)
-                for j in range(self.NUM_ABILITIES)
+        for i in range(self.TIME):
+            model.AddMultiplicationEquality(
+                self.total_damage[i], [self.abil_damage[i], self.damage_boost[i]]
             )
+
+        model.Add(
+            self.damage_sum == sum(self.total_damage[i] for i in range(self.TIME))
         )
-        model.Maximize(damage_sum)
+        model.Maximize(self.damage_sum)
 
     def solve(self):
         output = []
-        solver.Solve(model)
+        status = solver.Solve(model)
+        if status != cp_model.INFEASIBLE:
+            for i in range(self.TIME):
+                for j in range(self.NUM_ABILITIES):
+                    if solver.Value(self.x[i, j]) == 1:
+                        output.append([i, solver.Value(self.adren[i]), self.names[j]])
+
         for i in range(self.TIME):
-            for j in range(self.NUM_ABILITIES):
-                if solver.Value(self.x[i, j]) == 1:
-                    output.append([i, solver.Value(self.adren[i]), self.names[j]])
+            print(solver.Value(self.damage_boost[i]))
+        else:
+            print(solver.SufficientAssumptionsForInfeasibility())
 
         df = pd.DataFrame(output, columns=["Tick", "Adrenaline", "Ability Name"])
         print(df)
         print(solver.ResponseStats())
 
 
-s = AbilitySolver(seconds=10, start_adren=100, style="melee")
+s = AbilitySolver(seconds=20, start_adren=100, style="melee")
 
 s.init_variables()
 s.add_constraints()
